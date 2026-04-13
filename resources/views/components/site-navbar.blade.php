@@ -52,17 +52,13 @@
         </a>
 
         @auth
-            <a
-                href="{{ route('dashboard') }}"
-                @class([
-                    $linkBaseClasses,
-                    $activeLinkClasses => request()->routeIs('dashboard'),
-                    $inactiveLinkClasses => ! request()->routeIs('dashboard'),
-                ])
-                wire:navigate
-            >
-                Dashboard
-            </a>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+
+                <button type="submit" class="{{ $linkBaseClasses }} {{ $inactiveLinkClasses }}">
+                    Log out
+                </button>
+            </form>
         @else
             <a
                 href="{{ route('login') }}"
