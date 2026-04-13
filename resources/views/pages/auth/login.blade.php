@@ -1,59 +1,92 @@
-<x-layouts::auth :title="__('Log in')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+    <head>
+        @include('partials.head', ['title' => __('Log in')])
+    </head>
+    <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+        <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,#f59e0b20,transparent_40%),radial-gradient(circle_at_90%_20%,#0ea5e920,transparent_35%),radial-gradient(circle_at_50%_100%,#14b8a620,transparent_40%)]"></div>
 
-        <!-- Session Status -->
-        <x-auth-session-status class="text-center" :status="session('status')" />
+        <header class="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-6">
+            <a href="{{ route('home') }}" class="text-sm font-semibold tracking-wide text-zinc-700 transition hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white" wire:navigate>
+                {{ config('app.name', 'Materials Database') }}
+            </a>
 
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
-            @csrf
+            <nav class="flex items-center gap-3 text-sm font-medium">
+                <a href="{{ route('home') }}" class="rounded-md px-3 py-2 text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white" wire:navigate>
+                    Home
+                </a>
+                <a href="{{ route('about') }}" class="rounded-md px-3 py-2 text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white" wire:navigate>
+                    About
+                </a>
+                <span class="rounded-md bg-zinc-900 px-3 py-2 text-white dark:bg-white dark:text-zinc-900">
+                    Log in
+                </span>
+            </nav>
+        </header>
 
-            <!-- Email Address -->
-            <flux:input
-                name="email"
-                :label="__('Email address')"
-                :value="old('email')"
-                type="email"
-                required
-                autofocus
-                autocomplete="email"
-                placeholder="email@example.com"
-            />
+        <main class="mx-auto w-full max-w-3xl px-6 pb-16 pt-4">
+            <section class="about-fade-up mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
+                <div class="about-gradient-shift border-b border-zinc-200/70 bg-linear-to-r from-amber-100/70 via-cyan-100/70 to-teal-100/70 px-6 py-6 dark:border-zinc-800 dark:from-amber-900/30 dark:via-cyan-900/20 dark:to-teal-900/30 md:px-8">
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">Welcome Back</p>
+                    <h1 class="text-3xl font-semibold leading-tight sm:text-4xl">Log in to your account</h1>
+                    <p class="mt-2 text-sm text-zinc-700 dark:text-zinc-300">Enter your email and password below to access Wall-E.</p>
+                </div>
 
-            <!-- Password -->
-            <div class="relative">
-                <flux:input
-                    name="password"
-                    :label="__('Password')"
-                    type="password"
-                    required
-                    autocomplete="current-password"
-                    :placeholder="__('Password')"
-                    viewable
-                />
+                <div class="about-fade-up about-delay-1 grid gap-6 p-6 md:p-8">
+                    <div class="mx-auto w-full max-w-xs rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                        <x-auth-session-status class="mx-auto mb-4 w-full max-w-[13.5rem] text-center font-medium text-sm text-green-600" :status="session('status')" />
 
-                @if (Route::has('password.request'))
-                    <flux:link class="absolute top-0 text-sm end-0" :href="route('password.request')" wire:navigate>
-                        {{ __('Forgot your password?') }}
-                    </flux:link>
-                @endif
-            </div>
+                        <form method="POST" action="{{ route('login.store') }}" class="mx-auto flex w-full max-w-[13.5rem] flex-col gap-6">
+                            @csrf
 
-            <!-- Remember Me -->
-            <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+                            <flux:input
+                                name="email"
+                                :label="__('Email address')"
+                                :value="old('email')"
+                                type="email"
+                                required
+                                autofocus
+                                autocomplete="email"
+                                placeholder="email@example.com"
+                            />
 
-            <div class="flex items-center justify-end">
-                <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">
-                    {{ __('Log in') }}
-                </flux:button>
-            </div>
-        </form>
+                            <div class="relative">
+                                <flux:input
+                                    name="password"
+                                    :label="__('Password')"
+                                    type="password"
+                                    required
+                                    autocomplete="current-password"
+                                    :placeholder="__('Password')"
+                                    viewable
+                                />
 
-        @if (Route::has('register'))
-            <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
-                <span>{{ __('Don\'t have an account?') }}</span>
-                <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
-            </div>
-        @endif
-    </div>
-</x-layouts::auth>
+                                @if (Route::has('password.request'))
+                                    <flux:link class="absolute end-0 top-0 text-sm" :href="route('password.request')" wire:navigate>
+                                        {{ __('Forgot your password?') }}
+                                    </flux:link>
+                                @endif
+                            </div>
+
+                            <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+
+                            <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">
+                                {{ __('Log in') }}
+                            </flux:button>
+                        </form>
+
+                        @if (Route::has('register'))
+                            <div class="mx-auto mt-5 w-full max-w-[13.5rem] space-x-1 text-center text-sm text-zinc-600 rtl:space-x-reverse dark:text-zinc-400">
+                                <span>{{ __('Don\'t have an account?') }}</span>
+                                <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        @fluxScripts
+    </body>
+</html>
