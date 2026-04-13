@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class ImportCsvSeeder extends Seeder
+class ImportWallsSeeder extends Seeder
 {
     public function run(): void
     {
@@ -28,7 +28,6 @@ class ImportCsvSeeder extends Seeder
                 'Wall_Thickness(m/in)' => $data[6],
                 'created_at' => now(),
                 'updated_at' => now(),
-
             ]);
         }
 

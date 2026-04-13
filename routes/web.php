@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\walls;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 Route::view('/', 'welcome')->name('home');
 Route::view('/about', 'about')->name('about');
