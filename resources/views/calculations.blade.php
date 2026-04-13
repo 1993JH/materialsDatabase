@@ -125,11 +125,16 @@
                                         </select>
                                     </td>
                                     <td class="px-6 py-3 md:px-8">
-                                        <div class="flex items-center justify-between gap-3">
-                                            <span>0 in (0 mm)</span>
+                                        <div class="flex items-center gap-3">
+                                            <input
+                                                type="text"
+                                                value=""
+                                                placeholder="Enter thickness (in/mm)"
+                                                class="thickness-input w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                            >
                                             <button
                                                 type="button"
-                                                class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                                                class="row-remove-button inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                                                 aria-label="Remove this layer"
                                             >
                                                 -
@@ -271,11 +276,16 @@
                             </select>
                         </td>
                         <td class="px-6 py-3 md:px-8">
-                            <div class="flex items-center justify-between gap-3">
-                                <span>0 in (0 mm)</span>
+                            <div class="flex items-center gap-3">
+                                <input
+                                    type="text"
+                                    value=""
+                                    placeholder="Enter thickness (in/mm)"
+                                    class="thickness-input w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                >
                                 <button
                                     type="button"
-                                    class="${removeButtonClass}"
+                                    class="${removeButtonClass} shrink-0"
                                     aria-label="Remove this layer"
                                 >
                                     -
