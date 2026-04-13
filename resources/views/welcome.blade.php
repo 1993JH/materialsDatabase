@@ -20,44 +20,61 @@
     <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
         <x-site-navbar />
 
-        <main class="mx-auto w-full max-w-6xl px-6 pb-16 pt-4">
+        <main class="mx-auto w-full px-2 sm:px-3 pb-16 pt-4">
             <section class="overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
-                <div class="border-b border-zinc-200/80 px-8 py-6 dark:border-zinc-800">
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">Database</p>
-                    <h1 class="mt-1 text-3xl font-semibold leading-tight">Wall Assemblies</h1>
-                    <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Walls loaded from the walls table.</p>
-                </div>
+                <div class="flex flex-col gap-6 lg:flex-row">
+                    <!-- Sidebar -->
+                    <div class="w-full border-b border-zinc-200/80 px-3 sm:px-5 py-6 lg:w-64 lg:border-b-0 lg:border-r dark:border-zinc-800">
+                        <div class="mb-4">
+                            <h1 class="text-3xl font-semibold leading-tight">Wall-E</h1>
+                            <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{{ count($walls) }} wall{{ count($walls) !== 1 ? 's' : '' }} available</p>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="wallSearch" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Search Walls</label>
+                            <input
+                                type="text"
+                                id="wallSearch"
+                                placeholder="Search by name, climate, or type..."
+                                class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm placeholder-zinc-400 outline-none transition focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-zinc-600 dark:bg-zinc-800 dark:placeholder-zinc-500 dark:focus:border-teal-500"
+                            />
+                        </div>
+                    </div>
 
-                <div class="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-3">
-                    @forelse ($walls as $wall)
-                        <button
-                            type="button"
-                            class="wall-card text-left rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-zinc-700 dark:bg-zinc-800/40"
-                            data-wall-id="{{ $wall->id }}"
-                            data-wall-name="{{ $wall->assembly_description }}"
-                        >
-                            <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ $wall->assembly_description }}</h2>
+                    <!-- Main Content -->
+                    <div class="flex-1 p-3 sm:p-5">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            @forelse ($walls as $wall)
+                                <button
+                                    type="button"
+                                    class="wall-card text-left rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-zinc-700 dark:bg-zinc-800/40"
+                                    data-wall-id="{{ $wall->id }}"
+                                    data-wall-name="{{ $wall->assembly_description }}"
+                                    data-search-text="{{ strtolower($wall->assembly_description . ' ' . $wall->climate_zone . ' ' . $wall->wall_type) }}"
+                                >
+                                    <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ $wall->assembly_description }}</h2>
 
-                            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                                <span class="rounded-full border border-cyan-200/80 bg-cyan-100/70 px-2.5 py-1 text-cyan-800 dark:border-cyan-800/70 dark:bg-cyan-900/30 dark:text-cyan-200">
-                                    Climate: {{ $wall->climate_zone }}
-                                </span>
-                                <span class="rounded-full border border-amber-200/80 bg-amber-100/70 px-2.5 py-1 text-amber-800 dark:border-amber-800/70 dark:bg-amber-900/30 dark:text-amber-200">
-                                    Wall Type: {{ $wall->wall_type }}
-                                </span>
-                                <span class="rounded-full border border-teal-200/80 bg-teal-100/70 px-2.5 py-1 text-teal-800 dark:border-teal-800/70 dark:bg-teal-900/30 dark:text-teal-200">
-                                    R-Value: {{ $wall->r_value }}
-                                </span>
-                            </div>
-                        </button>
-                    @empty
-                        <p class="text-sm text-zinc-600 dark:text-zinc-300">No walls found in the database.</p>
-                    @endforelse
-                </div>
+                                    <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                                        <span class="rounded-full border border-cyan-200/80 bg-cyan-100/70 px-2.5 py-1 text-cyan-800 dark:border-cyan-800/70 dark:bg-cyan-900/30 dark:text-cyan-200">
+                                            Climate: {{ $wall->climate_zone }}
+                                        </span>
+                                        <span class="rounded-full border border-amber-200/80 bg-amber-100/70 px-2.5 py-1 text-amber-800 dark:border-amber-800/70 dark:bg-amber-900/30 dark:text-amber-200">
+                                            Wall Type: {{ $wall->wall_type }}
+                                        </span>
+                                        <span class="rounded-full border border-teal-200/80 bg-teal-100/70 px-2.5 py-1 text-teal-800 dark:border-teal-800/70 dark:bg-teal-900/30 dark:text-teal-200">
+                                            R-Value: {{ $wall->r_value }}
+                                        </span>
+                                    </div>
+                                </button>
+                            @empty
+                                <p class="text-sm text-zinc-600 dark:text-zinc-300">No walls found in the database.</p>
+                            @endforelse
+                        </div>
+                    </div>
             </section>
         </main>
 
-        <dialog id="wallLayersDialog" class="w-[min(900px,95vw)] rounded-2xl border border-zinc-200 p-0 shadow-2xl backdrop:bg-zinc-900/60 dark:border-zinc-700 dark:bg-zinc-900">
+        <dialog id="wallLayersDialog" class="fixed left-1/2 top-1/2 w-[min(900px,95vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-zinc-200 p-0 shadow-2xl backdrop:bg-zinc-900/60 dark:border-zinc-700 dark:bg-zinc-900">
             <div class="p-5 sm:p-6">
                 <div class="mb-4 flex items-start justify-between gap-3">
                     <div>
@@ -75,6 +92,7 @@
                                 <th class="px-3 py-2 text-left font-semibold">Material Name</th>
                                 <th class="px-3 py-2 text-left font-semibold">Thickness</th>
                                 <th class="px-3 py-2 text-left font-semibold">Embodied Carbon</th>
+                                <th class="px-3 py-2 text-left font-semibold">R Value</th>
                             </tr>
                         </thead>
                         <tbody id="wallLayersDialogBody" class="divide-y divide-zinc-200 dark:divide-zinc-700"></tbody>

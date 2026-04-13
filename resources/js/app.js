@@ -11,7 +11,7 @@ if (dataElement && dialogElement && dialogTitleElement && dialogBodyElement && c
 		if (!layers || layers.length === 0) {
 			dialogBodyElement.innerHTML = `
 				<tr>
-					<td colspan="4" class="px-3 py-4 text-zinc-500 dark:text-zinc-400">No layer records found for this wall.</td>
+					<td colspan="5" class="px-3 py-4 text-zinc-500 dark:text-zinc-400">No layer records found for this wall.</td>
 				</tr>
 			`;
 
@@ -24,6 +24,7 @@ if (dataElement && dialogElement && dialogTitleElement && dialogBodyElement && c
 				<td class="px-3 py-2">${layer.material_name}</td>
 				<td class="px-3 py-2">${layer.layer_thickness}</td>
 				<td class="px-3 py-2">${layer.embodied_carbon}</td>
+				<td class="px-3 py-2">${layer.r_value ?? '-'}</td>
 			</tr>
 		`).join('');
 	};
@@ -54,3 +55,19 @@ if (dataElement && dialogElement && dialogTitleElement && dialogBodyElement && c
 		}
 	});
 }
+
+// Search functionality
+const searchInput = document.getElementById('wallSearch');
+if (searchInput) {
+	searchInput.addEventListener('input', (event) => {
+		const searchTerm = event.target.value.toLowerCase();
+		const wallCards = document.querySelectorAll('.wall-card');
+
+		wallCards.forEach((card) => {
+			const searchText = card.getAttribute('data-search-text') || '';
+			const isVisible = searchText.includes(searchTerm);
+			card.style.display = isVisible ? '' : 'none';
+		});
+	});
+}
+
