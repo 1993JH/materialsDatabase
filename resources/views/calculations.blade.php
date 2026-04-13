@@ -146,6 +146,30 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="border-t border-zinc-200/70 px-6 py-5 dark:border-zinc-800 md:px-8">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <button
+                            id="calculate-table-button"
+                            type="button"
+                            class="inline-flex items-center justify-center rounded-full bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                        >
+                            Calculate
+                        </button>
+
+                        <div class="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-200">
+                            <span class="font-semibold text-zinc-900 dark:text-zinc-100">Total thickness (in/mm):</span>
+                            <span id="calculation-result" class="ml-2">0</span>
+                        </div>
+                        <div class="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-200">
+                            <span class="font-semibold text-zinc-900 dark:text-zinc-100">Embodied carbon (kgCO2e):</span>
+                            <span id="embodied-carbon-result" class="ml-2">0</span>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                        This calculates total thickness and embodied carbon from the rows below.
+                    </p>
+                </div>
             </section>
 
             <section class="mt-8 grid gap-5 md:grid-cols-3">
@@ -178,13 +202,16 @@
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const addRowButton = document.getElementById('add-material-row');
+                const calculateButton = document.getElementById('calculate-table-button');
+                const calculationResult = document.getElementById('calculation-result');
+                const embodiedCarbonResult = document.getElementById('embodied-carbon-result');
                 const tableBody = document.getElementById('materials-table-body');
                 const categoryNames = @json($categoryNames);
                 const categoryMaterialMap = @json($categoryMaterialMap);
                 const minRows = 3;
                 const maxRows = 10;
 
-                if (!addRowButton || !tableBody) {
+                if (!addRowButton || !calculateButton || !calculationResult || !embodiedCarbonResult || !tableBody) {
                     return;
                 }
 
@@ -201,10 +228,11 @@
                     const materialNames = categoryMaterialMap[categoryName] ?? [];
 
                     return materialNames
-                        .map((materialName) => {
-                            const escapedMaterialName = escapeHtml(materialName);
+                        .map((material) => {
+                            const escapedMaterialName = escapeHtml(material.name);
+                            const escapedKgCo2e = escapeHtml(String(material.kgco2e));
 
-                            return `<option value="${escapedMaterialName}">${escapedMaterialName}</option>`;
+                            return `<option value="${escapedMaterialName}" data-kgco2e="${escapedKgCo2e}">${escapedMaterialName}</option>`;
                         })
                         .join('');
                 };
@@ -230,6 +258,77 @@
                     materialSelect.disabled = !hasSelectedCategory;
                 };
 
+                const parseThicknessValue = (value) => {
+                    const trimmedValue = value.trim();
+                    const mixedFractionMatch = trimmedValue.match(/^(\d+)\s*-\s*(\d+)\/(\d+)/);
+
+                    if (mixedFractionMatch) {
+                        const wholeNumber = Number(mixedFractionMatch[1]);
+                        const numerator = Number(mixedFractionMatch[2]);
+                        const denominator = Number(mixedFractionMatch[3]);
+
+                        if (denominator === 0) {
+                            return 0;
+                        }
+
+                        return wholeNumber + (numerator / denominator);
+                    }
+
+                    const fractionMatch = trimmedValue.match(/^(\d+)\/(\d+)/);
+
+                    if (fractionMatch) {
+                        const numerator = Number(fractionMatch[1]);
+                        const denominator = Number(fractionMatch[2]);
+
+                        if (denominator === 0) {
+                            return 0;
+                        }
+
+                        return numerator / denominator;
+                    }
+
+                    const decimalMatch = trimmedValue.match(/^-?\d*\.?\d+/);
+
+                    if (!decimalMatch) {
+                        return 0;
+                    }
+
+                    const parsedThickness = Number(decimalMatch[0]);
+
+                    return Number.isNaN(parsedThickness) ? 0 : parsedThickness;
+                };
+
+                const calculateThicknessTotal = () => {
+                    const totalThickness = Array.from(tableBody.querySelectorAll('.thickness-input'))
+                        .map((input) => parseThicknessValue(input.value))
+                        .reduce((total, thickness) => total + thickness, 0);
+
+                    calculationResult.textContent = totalThickness.toFixed(2);
+                };
+
+                const calculateEmbodiedCarbonTotal = () => {
+                    const totalEmbodiedCarbon = Array.from(tableBody.querySelectorAll('.material-select'))
+                        .map((select) => {
+                            const selectedOption = select.selectedOptions[0];
+
+                            if (!selectedOption) {
+                                return 0;
+                            }
+
+                            const kgCo2e = Number(selectedOption.dataset.kgco2e ?? 0);
+
+                            return Number.isNaN(kgCo2e) ? 0 : kgCo2e;
+                        })
+                        .reduce((total, embodiedCarbon) => total + embodiedCarbon, 0);
+
+                    embodiedCarbonResult.textContent = `${totalEmbodiedCarbon.toFixed(2)} kgCO2e`;
+                };
+
+                const runCalculations = () => {
+                    calculateThicknessTotal();
+                    calculateEmbodiedCarbonTotal();
+                };
+
                 const updateButtonState = () => {
                     const hasReachedMax = tableBody.children.length >= maxRows;
                     const hasReachedMin = tableBody.children.length <= minRows;
@@ -248,6 +347,8 @@
                 };
 
                 updateButtonState();
+
+                calculateButton.addEventListener('click', runCalculations);
 
                 addRowButton.addEventListener('click', () => {
                     if (tableBody.children.length >= maxRows) {

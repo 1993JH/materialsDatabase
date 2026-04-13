@@ -18,11 +18,17 @@ Route::get('/calculations', function () {
         ->all();
 
     $materialsByCategory = materials::query()
-        ->select('name', 'category_id')
+        ->select('name', 'category_id', 'KgCO2e')
         ->orderBy('name')
         ->get()
         ->groupBy('category_id')
-        ->map(fn ($materialGroup) => $materialGroup->pluck('name')->values()->all());
+        ->map(fn ($materialGroup) => $materialGroup
+            ->map(fn ($material) => [
+                'name' => $material->name,
+                'kgco2e' => (float) $material->KgCO2e,
+            ])
+            ->values()
+            ->all());
 
     $categoryMaterialMap = $categories
         ->mapWithKeys(fn ($category) => [
