@@ -83,6 +83,106 @@
                 </div>
             </section>
 
+            <section class="mt-8 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+                <div class="border-b border-zinc-200/70 px-6 py-5 dark:border-zinc-800 md:px-8">
+                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">Material Table</p>
+                    <div class="mt-2 flex items-center justify-between gap-4">
+                        <h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Wall Layer Breakdown</h2>
+                        <button
+                            id="add-material-row"
+                            type="button"
+                            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white text-xl leading-none text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                            aria-label="Add row"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left text-sm">
+                        <thead class="bg-zinc-100/80 text-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold md:px-8">Material location</th>
+                                <th class="px-6 py-3 font-semibold md:px-8">Materials</th>
+                                <th class="px-6 py-3 font-semibold md:px-8">Thickness</th>
+                            </tr>
+                        </thead>
+                        <tbody id="materials-table-body" class="divide-y divide-zinc-200/70 dark:divide-zinc-800">
+                            <tr>
+                                <td class="px-6 py-3 md:px-8">
+                                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                        <option value="">Select category</option>
+                                        @foreach ($categoryNames as $categoryName)
+                                            <option value="{{ $categoryName }}">{{ $categoryName }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-6 py-3 md:px-8">Gypsum board</td>
+                                <td class="px-6 py-3 md:px-8">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span>1/2 in (12.7 mm)</span>
+                                        <button
+                                            type="button"
+                                            class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                                            aria-label="Remove this layer"
+                                        >
+                                            -
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-3 md:px-8">
+                                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                        <option value="">Select category</option>
+                                        @foreach ($categoryNames as $categoryName)
+                                            <option value="{{ $categoryName }}">{{ $categoryName }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-6 py-3 md:px-8">Mineral wool batt</td>
+                                <td class="px-6 py-3 md:px-8">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span>5-1/2 in (140 mm)</span>
+                                        <button
+                                            type="button"
+                                            class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                                            aria-label="Remove this layer"
+                                        >
+                                            -
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-3 md:px-8">
+                                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                        <option value="">Select category</option>
+                                        @foreach ($categoryNames as $categoryName)
+                                            <option value="{{ $categoryName }}">{{ $categoryName }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-6 py-3 md:px-8">OSB panel</td>
+                                <td class="px-6 py-3 md:px-8">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span>7/16 in (11 mm)</span>
+                                        <button
+                                            type="button"
+                                            class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                                            aria-label="Remove this layer"
+                                        >
+                                            -
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <section class="mt-8 grid gap-5 md:grid-cols-3">
                 <article class="rounded-2xl border border-zinc-200/80 bg-white/85 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/75">
                     <p class="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Estimate</p>
@@ -109,5 +209,97 @@
                 </article>
             </section>
         </main>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const addRowButton = document.getElementById('add-material-row');
+                const tableBody = document.getElementById('materials-table-body');
+                const categoryNames = @json($categoryNames);
+                const minRows = 3;
+                const maxRows = 10;
+
+                if (!addRowButton || !tableBody) {
+                    return;
+                }
+
+                const removeButtonClass = 'row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800';
+
+                const updateButtonState = () => {
+                    const hasReachedMax = tableBody.children.length >= maxRows;
+                    const hasReachedMin = tableBody.children.length <= minRows;
+
+                    addRowButton.disabled = hasReachedMax;
+                    addRowButton.setAttribute('aria-disabled', hasReachedMax ? 'true' : 'false');
+                    addRowButton.classList.toggle('opacity-40', hasReachedMax);
+                    addRowButton.classList.toggle('cursor-not-allowed', hasReachedMax);
+
+                    tableBody.querySelectorAll('.row-remove-button').forEach((button) => {
+                        button.disabled = hasReachedMin;
+                        button.setAttribute('aria-disabled', hasReachedMin ? 'true' : 'false');
+                        button.classList.toggle('opacity-40', hasReachedMin);
+                        button.classList.toggle('cursor-not-allowed', hasReachedMin);
+                    });
+                };
+
+                updateButtonState();
+
+                addRowButton.addEventListener('click', () => {
+                    if (tableBody.children.length >= maxRows) {
+                        return;
+                    }
+
+                    const row = document.createElement('tr');
+                    const locationSelectOptions = categoryNames
+                        .map((categoryName) => `<option value="${categoryName}">${categoryName}</option>`)
+                        .join('');
+
+                    row.innerHTML = `
+                        <td class="px-6 py-3 md:px-8">
+                            <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                <option value="">Select category</option>
+                                ${locationSelectOptions}
+                            </select>
+                        </td>
+                        <td class="px-6 py-3 md:px-8">New material</td>
+                        <td class="px-6 py-3 md:px-8">
+                            <div class="flex items-center justify-between gap-3">
+                                <span>0 in (0 mm)</span>
+                                <button
+                                    type="button"
+                                    class="${removeButtonClass}"
+                                    aria-label="Remove this layer"
+                                >
+                                    -
+                                </button>
+                            </div>
+                        </td>
+                    `;
+
+                    tableBody.appendChild(row);
+                    updateButtonState();
+                });
+
+                tableBody.addEventListener('click', (event) => {
+                    const clickedElement = event.target;
+
+                    if (!(clickedElement instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const removeButton = clickedElement.closest('.row-remove-button');
+
+                    if (!removeButton) {
+                        return;
+                    }
+
+                    if (tableBody.children.length <= minRows) {
+                        return;
+                    }
+
+                    removeButton.closest('tr')?.remove();
+                    updateButtonState();
+                });
+            });
+        </script>
     </body>
 </html>

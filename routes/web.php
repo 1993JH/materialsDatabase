@@ -1,10 +1,21 @@
 <?php
 
+use App\Models\categories;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 Route::view('/about', 'about')->name('about');
-Route::view('/calculations', 'calculations')->name('calculations');
+Route::get('/calculations', function () {
+    $categoryNames = categories::query()
+        ->orderBy('name')
+        ->pluck('name')
+        ->values()
+        ->all();
+
+    return view('calculations', [
+        'categoryNames' => $categoryNames,
+    ]);
+})->name('calculations');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
