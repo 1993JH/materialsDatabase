@@ -28,18 +28,6 @@
         </a>
 
         <a
-            href="{{ route('about') }}"
-            @class([
-                $linkBaseClasses,
-                $activeLinkClasses => request()->routeIs('about'),
-                $inactiveLinkClasses => ! request()->routeIs('about'),
-            ])
-            wire:navigate
-        >
-            About
-        </a>
-
-        <a
             href="{{ route('calculations') }}"
             @class([
                 $linkBaseClasses,
@@ -49,6 +37,18 @@
             wire:navigate
         >
             Calculations
+        </a>
+
+        <a
+            href="{{ route('about') }}"
+            @class([
+                $linkBaseClasses,
+                $activeLinkClasses => request()->routeIs('about'),
+                $inactiveLinkClasses => ! request()->routeIs('about'),
+            ])
+            wire:navigate
+        >
+            About us
         </a>
 
         @auth
