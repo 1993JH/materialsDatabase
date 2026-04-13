@@ -114,30 +114,12 @@
     </head>
     <body>
         <div class="container">
+            <x-site-navbar wrapper-class="max-w-[1100px] px-0 py-0 mb-6" class="header mb-6 px-0 py-0" />
+
             <header class="header">
                 <h1>Wall-E</h1>
 
                 <p>Total records: {{ $walls->count() }}</p>
-
-                @if (Route::has('login'))
-                    <nav class="nav">
-                        @auth
-                            <a href="{{ route('dashboard') }}" class="link-btn">
-                                Dashboard
-                            </a>
-                        @else
-                            <a href="{{ route('login') }}" class="link-btn">
-                                Log in
-                            </a>
-
-                            @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="link-btn">
-                                    Register
-                                </a>
-                            @endif
-                        @endauth
-                    </nav>
-                @endif
             </header>
 
             @if ($walls->isNotEmpty())
