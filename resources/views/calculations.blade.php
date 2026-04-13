@@ -109,75 +109,35 @@
                             </tr>
                         </thead>
                         <tbody id="materials-table-body" class="divide-y divide-zinc-200/70 dark:divide-zinc-800">
-                            <tr>
-                                <td class="px-6 py-3 md:px-8">
-                                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                        <option value="">Select category</option>
-                                        @foreach ($categoryNames as $categoryName)
-                                            <option value="{{ $categoryName }}">{{ $categoryName }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="px-6 py-3 md:px-8">Gypsum board</td>
-                                <td class="px-6 py-3 md:px-8">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <span>1/2 in (12.7 mm)</span>
-                                        <button
-                                            type="button"
-                                            class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                                            aria-label="Remove this layer"
-                                        >
-                                            -
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-3 md:px-8">
-                                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                        <option value="">Select category</option>
-                                        @foreach ($categoryNames as $categoryName)
-                                            <option value="{{ $categoryName }}">{{ $categoryName }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="px-6 py-3 md:px-8">Mineral wool batt</td>
-                                <td class="px-6 py-3 md:px-8">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <span>5-1/2 in (140 mm)</span>
-                                        <button
-                                            type="button"
-                                            class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                                            aria-label="Remove this layer"
-                                        >
-                                            -
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-3 md:px-8">
-                                    <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                        <option value="">Select category</option>
-                                        @foreach ($categoryNames as $categoryName)
-                                            <option value="{{ $categoryName }}">{{ $categoryName }}</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td class="px-6 py-3 md:px-8">OSB panel</td>
-                                <td class="px-6 py-3 md:px-8">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <span>7/16 in (11 mm)</span>
-                                        <button
-                                            type="button"
-                                            class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-                                            aria-label="Remove this layer"
-                                        >
-                                            -
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                            @for ($rowIndex = 0; $rowIndex < 3; $rowIndex++)
+                                <tr>
+                                    <td class="px-6 py-3 md:px-8">
+                                        <select class="location-select w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                                            <option value="">Select category</option>
+                                            @foreach ($categoryNames as $categoryName)
+                                                <option value="{{ $categoryName }}">{{ $categoryName }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="px-6 py-3 md:px-8">
+                                        <select class="material-select w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" disabled>
+                                            <option value="">Select material</option>
+                                        </select>
+                                    </td>
+                                    <td class="px-6 py-3 md:px-8">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <span>0 in (0 mm)</span>
+                                            <button
+                                                type="button"
+                                                class="row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                                                aria-label="Remove this layer"
+                                            >
+                                                -
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endfor
                         </tbody>
                     </table>
                 </div>
@@ -215,6 +175,7 @@
                 const addRowButton = document.getElementById('add-material-row');
                 const tableBody = document.getElementById('materials-table-body');
                 const categoryNames = @json($categoryNames);
+                const categoryMaterialMap = @json($categoryMaterialMap);
                 const minRows = 3;
                 const maxRows = 10;
 
@@ -223,6 +184,46 @@
                 }
 
                 const removeButtonClass = 'row-remove-button inline-flex h-7 w-7 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800';
+
+                const escapeHtml = (value) => value
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#39;');
+
+                const buildMaterialOptions = (categoryName) => {
+                    const materialNames = categoryMaterialMap[categoryName] ?? [];
+
+                    return materialNames
+                        .map((materialName) => {
+                            const escapedMaterialName = escapeHtml(materialName);
+
+                            return `<option value="${escapedMaterialName}">${escapedMaterialName}</option>`;
+                        })
+                        .join('');
+                };
+
+                const updateMaterialSelect = (locationSelect) => {
+                    const row = locationSelect.closest('tr');
+
+                    if (!row) {
+                        return;
+                    }
+
+                    const materialSelect = row.querySelector('.material-select');
+
+                    if (!(materialSelect instanceof HTMLSelectElement)) {
+                        return;
+                    }
+
+                    const selectedCategory = locationSelect.value;
+                    const hasSelectedCategory = selectedCategory !== '';
+                    const materialOptions = hasSelectedCategory ? buildMaterialOptions(selectedCategory) : '';
+
+                    materialSelect.innerHTML = `<option value="">Select material</option>${materialOptions}`;
+                    materialSelect.disabled = !hasSelectedCategory;
+                };
 
                 const updateButtonState = () => {
                     const hasReachedMax = tableBody.children.length >= maxRows;
@@ -250,17 +251,25 @@
 
                     const row = document.createElement('tr');
                     const locationSelectOptions = categoryNames
-                        .map((categoryName) => `<option value="${categoryName}">${categoryName}</option>`)
+                        .map((categoryName) => {
+                            const escapedCategoryName = escapeHtml(categoryName);
+
+                            return `<option value="${escapedCategoryName}">${escapedCategoryName}</option>`;
+                        })
                         .join('');
 
                     row.innerHTML = `
                         <td class="px-6 py-3 md:px-8">
-                            <select class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <select class="location-select w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 <option value="">Select category</option>
                                 ${locationSelectOptions}
                             </select>
                         </td>
-                        <td class="px-6 py-3 md:px-8">New material</td>
+                        <td class="px-6 py-3 md:px-8">
+                            <select class="material-select w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100" disabled>
+                                <option value="">Select material</option>
+                            </select>
+                        </td>
                         <td class="px-6 py-3 md:px-8">
                             <div class="flex items-center justify-between gap-3">
                                 <span>0 in (0 mm)</span>
@@ -277,6 +286,20 @@
 
                     tableBody.appendChild(row);
                     updateButtonState();
+                });
+
+                tableBody.addEventListener('change', (event) => {
+                    const changedElement = event.target;
+
+                    if (!(changedElement instanceof HTMLSelectElement)) {
+                        return;
+                    }
+
+                    if (!changedElement.classList.contains('location-select')) {
+                        return;
+                    }
+
+                    updateMaterialSelect(changedElement);
                 });
 
                 tableBody.addEventListener('click', (event) => {

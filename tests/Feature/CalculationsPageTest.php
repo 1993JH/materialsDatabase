@@ -11,4 +11,5 @@ test('calculations page is accessible to guests', function () {
     $response->assertSee('Materials');
     $response->assertSee('Thickness');
     $response->assertSee('Select category');
+    $response->assertSee('Select material');
 });
