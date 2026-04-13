@@ -23,17 +23,29 @@ Route::get('/', function () {
             'layers.layer_thickness',
             'materials.name as material_name',
             'materials.KgCO2e as embodied_carbon',
+            DB::raw('"materials"."Conductivity(W/mK)" as conductivity'),
         ])
         ->orderBy('layers.wall_id')
         ->orderBy('layers.layer_number')
         ->get()
         ->groupBy('wall_id')
-        ->map(fn ($rows) => $rows->map(fn ($row) => [
-            'layer_number' => $row->layer_number,
-            'material_name' => $row->material_name,
-            'layer_thickness' => $row->layer_thickness,
-            'embodied_carbon' => $row->embodied_carbon,
-        ])->values())
+        ->map(fn ($rows) => $rows->map(function ($row) {
+            $thicknessInMeters = ((float) $row->layer_thickness) / 1000;
+            $conductivity = (float) $row->conductivity;
+            $rValue = null;
+
+            if ($conductivity > 0) {
+                $rValue = floor(($thicknessInMeters / $conductivity) * 10000) / 10000;
+            }
+
+            return [
+                'layer_number' => $row->layer_number,
+                'material_name' => $row->material_name,
+                'layer_thickness' => $row->layer_thickness,
+                'embodied_carbon' => $row->embodied_carbon,
+                'r_value' => $rValue !== null ? number_format($rValue, 4, '.', '') : null,
+            ];
+        })->values())
         ->toArray();
 
     return view('welcome', [

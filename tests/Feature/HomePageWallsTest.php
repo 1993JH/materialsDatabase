@@ -54,5 +54,7 @@ test('home page displays wall records from walls table', function () {
     $response->assertSeeText('Wood Frame');
     $response->assertSeeText('Material Name');
     $response->assertSeeText('Embodied Carbon');
+    $response->assertSeeText('R Value');
     $response->assertSee('"material_name":"Test Insulation"', false);
+    $response->assertSee('"r_value":"0.6350"', false);
 });
