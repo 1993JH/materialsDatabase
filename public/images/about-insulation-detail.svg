@@ -1,0 +1,23 @@
+<svg width="900" height="700" viewBox="0 0 900 700" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+    <title id="title">Insulation detail sketch</title>
+    <desc id="desc">Close-up illustration of insulation layers and air barrier notes.</desc>
+    <defs>
+        <linearGradient id="bg" x1="100" y1="80" x2="820" y2="620" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#FEF3C7"/>
+            <stop offset="1" stop-color="#CFFAFE"/>
+        </linearGradient>
+    </defs>
+    <rect width="900" height="700" rx="28" fill="#F8FAFC"/>
+    <rect x="44" y="44" width="812" height="612" rx="24" fill="url(#bg)"/>
+    <rect x="110" y="120" width="150" height="460" rx="10" fill="#FFFFFF" stroke="#D4D4D8"/>
+    <rect x="276" y="120" width="290" height="460" rx="10" fill="#ECFEFF" stroke="#A5F3FC"/>
+    <rect x="292" y="138" width="258" height="424" rx="8" fill="#0EA5E920"/>
+    <path d="M292 185C325 150 342 154 382 185C422 216 440 214 480 185C520 156 537 160 550 185" stroke="#0F766E" stroke-opacity="0.6" stroke-width="3"/>
+    <path d="M292 280C325 245 342 249 382 280C422 311 440 309 480 280C520 251 537 255 550 280" stroke="#0F766E" stroke-opacity="0.6" stroke-width="3"/>
+    <path d="M292 375C325 340 342 344 382 375C422 406 440 404 480 375C520 346 537 350 550 375" stroke="#0F766E" stroke-opacity="0.6" stroke-width="3"/>
+    <path d="M292 470C325 435 342 439 382 470C422 501 440 499 480 470C520 441 537 445 550 470" stroke="#0F766E" stroke-opacity="0.6" stroke-width="3"/>
+    <rect x="584" y="120" width="206" height="460" rx="10" fill="#FFFBEB" stroke="#FCD34D"/>
+    <text x="610" y="188" fill="#1F2937" font-family="'Instrument Sans', sans-serif" font-size="22">R-24 Mineral Wool</text>
+    <text x="610" y="240" fill="#1F2937" font-family="'Instrument Sans', sans-serif" font-size="20">Vapor Control Layer</text>
+    <text x="610" y="292" fill="#1F2937" font-family="'Instrument Sans', sans-serif" font-size="20">Service Cavity</text>
+</svg>
