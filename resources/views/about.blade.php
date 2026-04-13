@@ -20,26 +20,7 @@
     <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
         <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_10%,#f59e0b20,transparent_40%),radial-gradient(circle_at_90%_20%,#0ea5e920,transparent_35%),radial-gradient(circle_at_50%_100%,#14b8a620,transparent_40%)]"></div>
 
-        <header class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
-            <a href="{{ route('home') }}" class="text-sm font-semibold tracking-wide text-zinc-700 transition hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white">
-                {{ config('app.name', 'Materials Database') }}
-            </a>
-
-            <nav class="flex items-center gap-3 text-sm font-medium">
-                <a href="{{ route('home') }}" class="rounded-md px-3 py-2 text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white">
-                    Home
-                </a>
-                @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-md bg-zinc-900 px-3 py-2 text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
-                        Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('login') }}" class="rounded-md bg-zinc-900 px-3 py-2 text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
-                        Log in
-                    </a>
-                @endauth
-            </nav>
-        </header>
+        <x-site-navbar />
 
         <main class="mx-auto w-full max-w-6xl px-6 pb-16 pt-4">
             <section class="about-fade-up overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/70">
