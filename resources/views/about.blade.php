@@ -29,6 +29,9 @@
                 <a href="{{ route('home') }}" class="rounded-md px-3 py-2 text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white">
                     Home
                 </a>
+                <a href="{{ route('calculations') }}" class="rounded-md px-3 py-2 text-zinc-600 transition hover:bg-white/80 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-white">
+                    Calculations
+                </a>
                 @auth
                     <a href="{{ route('dashboard') }}" class="rounded-md bg-zinc-900 px-3 py-2 text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
                         Dashboard
