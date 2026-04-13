@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             ImportCategoriesSeeder::class,
             ImportMaterialsSeeder::class,
             ImportWallsSeeder::class,
+            ImportLayersSeeder::class,
         ]);
     }
 }
