@@ -24,7 +24,7 @@
             <section class="overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
                 <div class="flex flex-col gap-6 lg:flex-row">
                     <!-- Sidebar -->
-                    <div class="w-full border-b border-zinc-200/80 px-3 sm:px-5 py-6 lg:w-64 lg:border-b-0 lg:border-r dark:border-zinc-800">
+                    <div class="w-full border-b border-zinc-200/80 px-3 sm:px-5 py-6 lg:w-72 lg:border-b-0 lg:border-r dark:border-zinc-800">
                         <div class="mb-4">
                             <h1 class="text-3xl font-semibold leading-tight">Wall-E</h1>
                             <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{{ count($walls) }} wall{{ count($walls) !== 1 ? 's' : '' }} available</p>
@@ -38,6 +38,68 @@
                                 placeholder="Search by name, climate, or type..."
                                 class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm placeholder-zinc-400 outline-none transition focus:border-teal-500 focus:ring-1 focus:ring-teal-500 dark:border-zinc-600 dark:bg-zinc-800 dark:placeholder-zinc-500 dark:focus:border-teal-500"
                             />
+
+                            <div class="mt-3">
+                                <div class="flex items-center justify-between gap-3">
+                                    <p class="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">Selected Filters</p>
+                                    <button type="button" id="clearAllFilters" class="text-xs font-medium text-teal-600 transition hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300">Clear all</button>
+                                </div>
+                                <div id="selectedFiltersSummary" class="mt-2 flex flex-col gap-3 text-sm text-zinc-700 dark:text-zinc-300"></div>
+                            </div>
+
+                            <details class="mt-4 block w-full" open>
+                                <summary class="cursor-pointer text-sm font-medium text-zinc-700 dark:text-zinc-300">Climate Zone</summary>
+                                <div id="climateZoneFilter" class="mt-3 flex flex-wrap gap-3">
+                                    @foreach (['<4' => 'LT4', '4' => '4', '5' => '5', '6' => '6', '7A' => '7A', '7B' => '7B', '8' => '8'] as $zoneLabel => $zoneValue)
+                                        <label class="inline-flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+                                            <input
+                                                type="checkbox"
+                                                class="climate-zone-checkbox h-4 w-4 rounded border-zinc-400 text-teal-600 focus:ring-teal-500"
+                                                value="{{ $zoneValue }}"
+                                            />
+                                            <span>Zone {{ $zoneLabel }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </details>
+
+                            <details class="mt-4 block w-full" open>
+                                <summary class="cursor-pointer text-sm font-medium text-zinc-700 dark:text-zinc-300">Insulation</summary>
+                                <div class="mt-3 flex flex-wrap gap-3">
+                                    @foreach ($insulationMaterials as $insulationMaterial)
+                                        <label class="inline-flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+                                            <input
+                                                type="checkbox"
+                                                class="insulation-filter-checkbox h-4 w-4 rounded border-zinc-400 text-teal-600 focus:ring-teal-500"
+                                                value="{{ $insulationMaterial }}"
+                                            />
+                                            <span>{{ $insulationMaterial }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </details>
+
+                            <details class="mt-4 block w-full" open>
+                                <summary class="cursor-pointer text-sm font-medium text-zinc-700 dark:text-zinc-300">Air Barrier</summary>
+                                <div class="mt-3 flex flex-wrap gap-3">
+                                    <label class="inline-flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+                                        <input
+                                            type="checkbox"
+                                            class="air-barrier-filter-checkbox h-4 w-4 rounded border-zinc-400 text-teal-600 focus:ring-teal-500"
+                                            value="1"
+                                        />
+                                        <span>With</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+                                        <input
+                                            type="checkbox"
+                                            class="air-barrier-filter-checkbox h-4 w-4 rounded border-zinc-400 text-teal-600 focus:ring-teal-500"
+                                            value="0"
+                                        />
+                                        <span>Without</span>
+                                    </label>
+                                </div>
+                            </details>
                         </div>
                     </div>
 
@@ -47,9 +109,12 @@
                             @forelse ($walls as $wall)
                                 <button
                                     type="button"
-                                    class="wall-card text-left rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-zinc-700 dark:bg-zinc-800/40"
+                                    class="wall-card text-left rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 transition duration-200 cursor-pointer hover:-translate-y-0.5 hover:border-teal-400 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 dark:border-zinc-700 dark:bg-zinc-800/40 dark:hover:border-teal-500 dark:hover:bg-zinc-800/70"
                                     data-wall-id="{{ $wall->id }}"
                                     data-wall-name="{{ $wall->assembly_description }}"
+                                    data-climate-zone="{{ $wall->climate_zone }}"
+                                    data-insulation-materials="{{ $wall->insulation_materials }}"
+                                    data-has-air-barrier="{{ $wall->has_air_barrier ? '1' : '0' }}"
                                     data-search-text="{{ strtolower($wall->assembly_description . ' ' . $wall->climate_zone . ' ' . $wall->wall_type) }}"
                                 >
                                     <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ $wall->assembly_description }}</h2>
