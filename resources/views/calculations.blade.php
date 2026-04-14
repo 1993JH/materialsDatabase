@@ -172,7 +172,7 @@
                                 <th class="px-6 py-3 font-semibold md:px-8">Fire Rating</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-zinc-200/70 dark:divide-zinc-800"></tbody>
+                        <tbody id="wall-assemblies-table-body" class="divide-y divide-zinc-200/70 dark:divide-zinc-800"></tbody>
                     </table>
                 </div>
             </section>
@@ -209,12 +209,14 @@
                 const addRowButton = document.getElementById('add-material-row');
                 const calculateButton = document.getElementById('calculate-table-button');
                 const tableBody = document.getElementById('materials-table-body');
+                const wallAssembliesTableBody = document.getElementById('wall-assemblies-table-body');
                 const categoryNames = @json($categoryNames);
                 const categoryMaterialMap = @json($categoryMaterialMap);
+                const wallAssembliesEndpoint = @json(route('calculations.wall-assemblies'));
                 const minRows = 3;
                 const maxRows = 10;
 
-                if (!addRowButton || !calculateButton || !tableBody) {
+                if (!addRowButton || !calculateButton || !tableBody || !wallAssembliesTableBody) {
                     return;
                 }
 
@@ -327,9 +329,85 @@
                     return totalEmbodiedCarbon;
                 };
 
-                const runCalculations = () => {
+                const renderWallAssemblyRows = (wallAssemblies, emptyMessage = 'No matching wall assemblies found for the selected materials.') => {
+                    if (!wallAssemblies.length) {
+                        wallAssembliesTableBody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 md:px-8">
+                                    ${escapeHtml(emptyMessage)}
+                                </td>
+                            </tr>
+                        `;
+
+                        return;
+                    }
+
+                    wallAssembliesTableBody.innerHTML = wallAssemblies
+                        .map((wallAssembly) => {
+                            const assemblyName = escapeHtml(String(wallAssembly.wall_assembly ?? ''));
+                            const rValue = Number(wallAssembly.r_value ?? 0).toFixed(2);
+                            const embodiedCarbon = Number(wallAssembly.embodied_carbon ?? 0).toFixed(2);
+                            const thickness = Number(wallAssembly.thickness ?? 0).toFixed(2);
+                            const fireRating = Number(wallAssembly.fire_rating ?? 0).toFixed(0);
+
+                            return `
+                                <tr>
+                                    <td class="px-6 py-3 text-zinc-800 dark:text-zinc-100 md:px-8">${assemblyName}</td>
+                                    <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">${rValue}</td>
+                                    <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">${embodiedCarbon}</td>
+                                    <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">${thickness}</td>
+                                    <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">${fireRating}</td>
+                                </tr>
+                            `;
+                        })
+                        .join('');
+                };
+
+                const fetchWallAssemblies = async (selectedMaterials) => {
+                    const query = new URLSearchParams();
+
+                    selectedMaterials.forEach((materialName) => {
+                        query.append('materials[]', materialName);
+                    });
+
+                    const response = await fetch(`${wallAssembliesEndpoint}?${query.toString()}`, {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Unable to fetch wall assemblies.');
+                    }
+
+                    const payload = await response.json();
+
+                    return Array.isArray(payload.data) ? payload.data : [];
+                };
+
+                const runCalculations = async () => {
                     calculateThicknessTotal();
                     calculateEmbodiedCarbonTotal();
+
+                    const selectedMaterials = Array.from(tableBody.querySelectorAll('.material-select'))
+                        .map((select) => select.value.trim())
+                        .filter((materialName) => materialName !== '');
+
+                    if (!selectedMaterials.length) {
+                        renderWallAssemblyRows([], 'Select at least one material in the Material Table to view matching wall assemblies.');
+
+                        return;
+                    }
+
+                    renderWallAssemblyRows([], 'Loading matching wall assemblies...');
+
+                    try {
+                        const wallAssemblies = await fetchWallAssemblies(selectedMaterials);
+
+                        renderWallAssemblyRows(wallAssemblies);
+                    } catch {
+                        renderWallAssemblyRows([], 'Unable to load wall assemblies right now. Please try again.');
+                    }
                 };
 
                 const updateButtonState = () => {
