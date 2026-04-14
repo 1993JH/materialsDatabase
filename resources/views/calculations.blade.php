@@ -245,6 +245,27 @@
                     return totalEmbodiedCarbon;
                 };
 
+                const resetMaterialTable = () => {
+                    tableBody.querySelectorAll('tr').forEach((row) => {
+                        const locationSelect = row.querySelector('.location-select');
+                        const materialSelect = row.querySelector('.material-select');
+                        const thicknessInput = row.querySelector('.thickness-input');
+
+                        if (locationSelect instanceof HTMLSelectElement) {
+                            locationSelect.value = '';
+                        }
+
+                        if (materialSelect instanceof HTMLSelectElement) {
+                            materialSelect.innerHTML = '<option value="">Select material</option>';
+                            materialSelect.disabled = true;
+                        }
+
+                        if (thicknessInput instanceof HTMLInputElement) {
+                            thicknessInput.value = '';
+                        }
+                    });
+                };
+
                 const renderWallAssemblyRows = (wallAssemblies, emptyMessage = 'No walls created yet.') => {
                     if (!wallAssemblies.length) {
                         wallAssembliesTableBody.innerHTML = `
@@ -373,6 +394,12 @@
                 };
 
                 updateButtonState();
+
+                resetMaterialTable();
+
+                window.addEventListener('pageshow', () => {
+                    resetMaterialTable();
+                });
 
                 calculateButton.addEventListener('click', runCalculations);
 
