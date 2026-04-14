@@ -212,9 +212,9 @@
                 const wallAssembliesTableBody = document.getElementById('wall-assemblies-table-body');
                 const categoryNames = @json($categoryNames);
                 const categoryMaterialMap = @json($categoryMaterialMap);
-                const wallAssembliesEndpoint = @json(route('calculations.wall-assemblies'));
                 const minRows = 3;
                 const maxRows = 10;
+                const createdWallAssemblies = [];
 
                 if (!addRowButton || !calculateButton || !tableBody || !wallAssembliesTableBody) {
                     return;
@@ -236,8 +236,9 @@
                         .map((material) => {
                             const escapedMaterialName = escapeHtml(material.name);
                             const escapedKgCo2e = escapeHtml(String(material.kgco2e));
+                            const escapedConductivity = escapeHtml(String(material.conductivity));
 
-                            return `<option value="${escapedMaterialName}" data-kgco2e="${escapedKgCo2e}">${escapedMaterialName}</option>`;
+                            return `<option value="${escapedMaterialName}" data-kgco2e="${escapedKgCo2e}" data-conductivity="${escapedConductivity}">${escapedMaterialName}</option>`;
                         })
                         .join('');
                 };
@@ -329,7 +330,7 @@
                     return totalEmbodiedCarbon;
                 };
 
-                const renderWallAssemblyRows = (wallAssemblies, emptyMessage = 'No matching wall assemblies found for the selected materials.') => {
+                const renderWallAssemblyRows = (wallAssemblies, emptyMessage = 'No walls created yet.') => {
                     if (!wallAssemblies.length) {
                         wallAssembliesTableBody.innerHTML = `
                             <tr>
@@ -348,7 +349,9 @@
                             const rValue = Number(wallAssembly.r_value ?? 0).toFixed(2);
                             const embodiedCarbon = Number(wallAssembly.embodied_carbon ?? 0).toFixed(2);
                             const thickness = Number(wallAssembly.thickness ?? 0).toFixed(2);
-                            const fireRating = Number(wallAssembly.fire_rating ?? 0).toFixed(0);
+                            const fireRating = wallAssembly.fire_rating === null || wallAssembly.fire_rating === ''
+                                ? 'N/A'
+                                : String(wallAssembly.fire_rating);
 
                             return `
                                 <tr>
@@ -363,51 +366,78 @@
                         .join('');
                 };
 
-                const fetchWallAssemblies = async (selectedMaterials) => {
-                    const query = new URLSearchParams();
+                const buildCreatedWallAssembly = () => {
+                    const rows = Array.from(tableBody.querySelectorAll('tr'));
+                    const selectedLayers = rows
+                        .map((row) => {
+                            const locationSelect = row.querySelector('.location-select');
+                            const materialSelect = row.querySelector('.material-select');
+                            const thicknessInput = row.querySelector('.thickness-input');
 
-                    selectedMaterials.forEach((materialName) => {
-                        query.append('materials[]', materialName);
-                    });
+                            if (!(locationSelect instanceof HTMLSelectElement)) {
+                                return null;
+                            }
 
-                    const response = await fetch(`${wallAssembliesEndpoint}?${query.toString()}`, {
-                        headers: {
-                            Accept: 'application/json',
-                        },
-                    });
+                            if (!(materialSelect instanceof HTMLSelectElement)) {
+                                return null;
+                            }
 
-                    if (!response.ok) {
-                        throw new Error('Unable to fetch wall assemblies.');
+                            if (!(thicknessInput instanceof HTMLInputElement)) {
+                                return null;
+                            }
+
+                            const selectedOption = materialSelect.selectedOptions[0];
+                            const categoryName = locationSelect.value.trim();
+                            const materialName = materialSelect.value.trim();
+
+                            if (!categoryName || !materialName || !selectedOption) {
+                                return null;
+                            }
+
+                            const conductivity = Number(selectedOption.dataset.conductivity ?? 0);
+                            const embodiedCarbon = Number(selectedOption.dataset.kgco2e ?? 0);
+                            const thickness = parseThicknessValue(thicknessInput.value);
+
+                            if (thickness <= 0) {
+                                return null;
+                            }
+
+                            return {
+                                assemblySegment: `${categoryName}: ${materialName}`,
+                                conductivity,
+                                embodiedCarbon,
+                                thickness,
+                            };
+                        })
+                        .filter((layer) => layer !== null);
+
+                    if (!selectedLayers.length) {
+                        return null;
                     }
 
-                    const payload = await response.json();
-
-                    return Array.isArray(payload.data) ? payload.data : [];
+                    return {
+                        wall_assembly: selectedLayers.map((layer) => layer.assemblySegment).join(' | '),
+                        r_value: selectedLayers.reduce((total, layer) => total + (layer.conductivity > 0 ? layer.thickness / layer.conductivity : 0), 0),
+                        embodied_carbon: selectedLayers.reduce((total, layer) => total + layer.embodiedCarbon, 0),
+                        thickness: selectedLayers.reduce((total, layer) => total + layer.thickness, 0),
+                        fire_rating: null,
+                    };
                 };
 
-                const runCalculations = async () => {
+                const runCalculations = () => {
                     calculateThicknessTotal();
                     calculateEmbodiedCarbonTotal();
 
-                    const selectedMaterials = Array.from(tableBody.querySelectorAll('.material-select'))
-                        .map((select) => select.value.trim())
-                        .filter((materialName) => materialName !== '');
+                    const createdWallAssembly = buildCreatedWallAssembly();
 
-                    if (!selectedMaterials.length) {
-                        renderWallAssemblyRows([], 'Select at least one material in the Material Table to view matching wall assemblies.');
+                    if (!createdWallAssembly) {
+                        renderWallAssemblyRows([], 'Select a category, material, and thickness in the Material Table to create a wall.');
 
                         return;
                     }
 
-                    renderWallAssemblyRows([], 'Loading matching wall assemblies...');
-
-                    try {
-                        const wallAssemblies = await fetchWallAssemblies(selectedMaterials);
-
-                        renderWallAssemblyRows(wallAssemblies);
-                    } catch {
-                        renderWallAssemblyRows([], 'Unable to load wall assemblies right now. Please try again.');
-                    }
+                    createdWallAssemblies.push(createdWallAssembly);
+                    renderWallAssemblyRows(createdWallAssemblies);
                 };
 
                 const updateButtonState = () => {
@@ -430,6 +460,8 @@
                 updateButtonState();
 
                 calculateButton.addEventListener('click', runCalculations);
+
+                renderWallAssemblyRows([]);
 
                 addRowButton.addEventListener('click', () => {
                     if (tableBody.children.length >= maxRows) {
