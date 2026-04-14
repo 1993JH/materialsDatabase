@@ -156,19 +156,7 @@
                         >
                             Calculate
                         </button>
-
-                        <div class="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-200">
-                            <span class="font-semibold text-zinc-900 dark:text-zinc-100">Total thickness (in/mm):</span>
-                            <span id="calculation-result" class="ml-2">0</span>
-                        </div>
-                        <div class="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950/50 dark:text-zinc-200">
-                            <span class="font-semibold text-zinc-900 dark:text-zinc-100">Embodied carbon (kgCO2e):</span>
-                            <span id="embodied-carbon-result" class="ml-2">0</span>
-                        </div>
                     </div>
-                    <p class="mt-3 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                        This calculates total thickness and embodied carbon from the rows below.
-                    </p>
                 </div>
             </section>
 
@@ -203,15 +191,13 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const addRowButton = document.getElementById('add-material-row');
                 const calculateButton = document.getElementById('calculate-table-button');
-                const calculationResult = document.getElementById('calculation-result');
-                const embodiedCarbonResult = document.getElementById('embodied-carbon-result');
                 const tableBody = document.getElementById('materials-table-body');
                 const categoryNames = @json($categoryNames);
                 const categoryMaterialMap = @json($categoryMaterialMap);
                 const minRows = 3;
                 const maxRows = 10;
 
-                if (!addRowButton || !calculateButton || !calculationResult || !embodiedCarbonResult || !tableBody) {
+                if (!addRowButton || !calculateButton || !tableBody) {
                     return;
                 }
 
@@ -303,7 +289,7 @@
                         .map((input) => parseThicknessValue(input.value))
                         .reduce((total, thickness) => total + thickness, 0);
 
-                    calculationResult.textContent = totalThickness.toFixed(2);
+                    return totalThickness;
                 };
 
                 const calculateEmbodiedCarbonTotal = () => {
@@ -321,7 +307,7 @@
                         })
                         .reduce((total, embodiedCarbon) => total + embodiedCarbon, 0);
 
-                    embodiedCarbonResult.textContent = `${totalEmbodiedCarbon.toFixed(2)} kgCO2e`;
+                    return totalEmbodiedCarbon;
                 };
 
                 const runCalculations = () => {
