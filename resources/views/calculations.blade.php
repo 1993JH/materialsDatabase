@@ -160,6 +160,23 @@
                 </div>
             </section>
 
+            <section class="mt-8 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left text-sm">
+                        <thead class="bg-zinc-100/80 text-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold md:px-8">Wall Assembly</th>
+                                <th class="px-6 py-3 font-semibold md:px-8">R Value</th>
+                                <th class="px-6 py-3 font-semibold md:px-8">Embodied Carbon</th>
+                                <th class="px-6 py-3 font-semibold md:px-8">Thickness</th>
+                                <th class="px-6 py-3 font-semibold md:px-8">Fire Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-200/70 dark:divide-zinc-800"></tbody>
+                    </table>
+                </div>
+            </section>
+
             <section class="mt-8 grid gap-5 md:grid-cols-3">
                 <article class="rounded-2xl border border-zinc-200/80 bg-white/85 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/75">
                     <p class="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Estimate</p>
