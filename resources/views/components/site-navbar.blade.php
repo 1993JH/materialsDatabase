@@ -1,6 +1,6 @@
 @props([
     'wrapperClass' => 'max-w-6xl',
-    'homeLabel' => config('app.name', 'Materials Database'),
+    'homeLabel' => config('app.name', 'Wall-E'),
 ])
 
 @php
