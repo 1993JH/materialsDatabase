@@ -1,11 +1,7 @@
 <?php
 
-<<<<<<< HEAD
 use App\Models\categories;
 use App\Models\materials;
-=======
-use Illuminate\Support\Facades\DB;
->>>>>>> origin/main
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
