@@ -25,7 +25,7 @@ class FortifyServiceProvider extends ServiceProvider
             {
                 return $request->wantsJson()
                     ? response()->json(['two_factor' => false])
-                    : redirect()->intended(route('home'));
+                    : redirect()->intended(route('admin'));
             }
         });
     }

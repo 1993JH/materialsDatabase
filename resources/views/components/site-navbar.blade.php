@@ -52,6 +52,18 @@
         </a>
 
         @auth
+            <a
+                href="{{ route('admin') }}"
+                @class([
+                    $linkBaseClasses,
+                    $activeLinkClasses => request()->routeIs('admin'),
+                    $inactiveLinkClasses => ! request()->routeIs('admin'),
+                ])
+                wire:navigate
+            >
+                Admin
+            </a>
+
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
 
