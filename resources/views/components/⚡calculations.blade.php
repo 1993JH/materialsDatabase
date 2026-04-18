@@ -242,9 +242,12 @@ new class extends Component
                         <td class="px-6 py-3 md:px-8">
                             <div class="flex items-center gap-3">
                                 <input
-                                    type="text"
+                                    type="number"
                                     wire:model.blur="rows.{{ $index }}.thickness"
                                     placeholder="Enter thickness (in/mm)"
+                                    min="0"
+                                    step="any"
+                                    inputmode="decimal"
                                     class="w-44 shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                                 >
                                 <button
@@ -293,7 +296,7 @@ new class extends Component
             <tbody class="divide-y divide-zinc-200/70 dark:divide-zinc-800">
                 @forelse ($createdWallAssemblies as $wallAssembly)
                     <tr>
-                        <td class="px-6 py-3 text-zinc-800 dark:text-zinc-100 md:px-8">{{ $wallAssembly['wall_assembly'] }}</td>
+                        <td class="px-6 py-3 text-zinc-800 dark:text-zinc-100 md:px-8">{{ preg_replace('/\bIntermediate\b/i', 'Structure', (string) $wallAssembly['wall_assembly']) }}</td>
                         <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ number_format((float) $wallAssembly['r_value'], 2) }}</td>
                         <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ number_format((float) $wallAssembly['embodied_carbon'], 2) }}</td>
                         <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ number_format((float) $wallAssembly['thickness'], 2) }}</td>
