@@ -1,18 +1,18 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-function makeAuthenticatedUser(): User
+uses(RefreshDatabase::class);
+
+function makeAdminUser(): User
 {
-    $user = new User([
-        'name' => 'Admin User',
-        'email' => 'admin@example.test',
-        'password' => 'password',
-    ]);
+    return User::factory()->admin()->create();
+}
 
-    $user->id = 1;
-
-    return $user;
+function makeRegularUser(): User
+{
+    return User::factory()->create();
 }
 
 test('guests are redirected to the login page from admin page', function () {
@@ -21,8 +21,8 @@ test('guests are redirected to the login page from admin page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can visit the admin page', function () {
-    $user = makeAuthenticatedUser();
+test('admin users can visit the admin page', function () {
+    $user = makeAdminUser();
     $this->actingAs($user);
 
     $response = $this->get(route('admin'));
@@ -31,12 +31,31 @@ test('authenticated users can visit the admin page', function () {
     $response->assertSee('Admin dashboard');
 });
 
-test('authenticated users see admin link in navbar', function () {
-    $user = makeAuthenticatedUser();
+test('non-admin users cannot visit the admin page', function () {
+    $user = makeRegularUser();
+    $this->actingAs($user);
+
+    $response = $this->get(route('admin'));
+
+    $response->assertForbidden();
+});
+
+test('admin users see admin link in navbar', function () {
+    $user = makeAdminUser();
     $this->actingAs($user);
 
     $response = $this->get(route('about'));
 
     $response->assertOk();
     $response->assertSee(route('admin'));
+});
+
+test('non-admin users do not see admin link in navbar', function () {
+    $user = makeRegularUser();
+    $this->actingAs($user);
+
+    $response = $this->get(route('about'));
+
+    $response->assertOk();
+    $response->assertDontSee(route('admin'));
 });

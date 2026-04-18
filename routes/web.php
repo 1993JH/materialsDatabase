@@ -8,7 +8,7 @@ Route::view('/calculations', 'calculations-livewire')->name('calculations');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
-    Route::view('admin', 'admin')->name('admin');
+    Route::view('admin', 'admin')->middleware('can:access-admin')->name('admin');
 });
 
 require __DIR__.'/settings.php';

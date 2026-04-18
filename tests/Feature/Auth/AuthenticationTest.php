@@ -10,10 +10,28 @@ test('login screen can be rendered', function () {
     $response = $this->get(route('login'));
 
     $response->assertOk();
+    $response->assertDontSee('class="dark"', false);
 });
 
 test('users can authenticate using the login screen', function () {
+    /** @var User $user */
     $user = User::factory()->create();
+
+    $response = $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('home', absolute: false));
+
+    $this->assertAuthenticated();
+});
+
+test('admin users can authenticate using the login screen and are redirected to admin', function () {
+    /** @var User $user */
+    $user = User::factory()->admin()->create();
 
     $response = $this->post(route('login.store'), [
         'email' => $user->email,
@@ -28,6 +46,7 @@ test('users can authenticate using the login screen', function () {
 });
 
 test('users can not authenticate with invalid password', function () {
+    /** @var User $user */
     $user = User::factory()->create();
 
     $response = $this->post(route('login.store'), [
@@ -48,6 +67,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
         'confirmPassword' => true,
     ]);
 
+    /** @var User $user */
     $user = User::factory()->withTwoFactor()->create();
 
     $response = $this->post(route('login.store'), [
@@ -60,6 +80,7 @@ test('users with two factor enabled are redirected to two factor challenge', fun
 });
 
 test('users can logout', function () {
+    /** @var User $user */
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post(route('logout'));
