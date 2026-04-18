@@ -131,7 +131,7 @@
                             <div class="tag-list">
                                 <span class="tag">Climate Zone: {{ $wall->Climate_Zone }}</span>
                                 <span class="tag">Wall Type: {{ $wall->Wall_Type }}</span>
-                                <span class="tag">R/U Value: {{ $wall->R_Value_U_Value }}</span>
+                                <span class="tag">R/U Value: {{ number_format((float) $wall->R_Value_U_Value, 3, '.', '') }}</span>
                             </div>
                         </article>
                     @endforeach

@@ -3,6 +3,8 @@
 use App\Models\categories;
 use App\Models\materials;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 new class extends Component
@@ -32,12 +34,13 @@ new class extends Component
             ->all();
 
         $materialsByCategory = materials::query()
-            ->selectRaw('name, category_id, KgCO2e, "Conductivity(W/mK)" as conductivity')
+            ->selectRaw('id, name, category_id, KgCO2e, "Conductivity(W/mK)" as conductivity')
             ->orderBy('name')
             ->get()
             ->groupBy('category_id')
             ->map(fn ($materialGroup) => $materialGroup
                 ->map(fn ($material) => [
+                    'id' => (int) $material->id,
                     'name' => $material->name,
                     'kgco2e' => (float) $material->KgCO2e,
                     'conductivity' => (float) $material->conductivity,
@@ -87,6 +90,17 @@ new class extends Component
         }
 
         $this->createdWallAssemblies[] = $createdWallAssembly;
+    }
+
+    public function addWalls(): void
+    {
+        if (! Gate::allows('access-admin')) {
+            return;
+        }
+
+        foreach ($this->createdWallAssemblies as $createdWallAssembly) {
+            $this->persistWallAssembly($createdWallAssembly);
+        }
     }
 
     public function materialOptionsForCategory(string $categoryName): array
@@ -164,6 +178,8 @@ new class extends Component
             $embodiedCarbon = (float) ($availableMaterial['kgco2e'] ?? 0);
 
             $selectedLayers[] = [
+                'material_id' => (int) ($availableMaterial['id'] ?? 0),
+                'category_name' => $categoryName,
                 'assembly_segment' => $categoryName.': '.$materialName,
                 'conductivity' => $conductivity,
                 'embodied_carbon' => $embodiedCarbon,
@@ -175,28 +191,194 @@ new class extends Component
             return null;
         }
 
+        $wallAssemblyName = $this->buildWallAssemblyName($selectedLayers);
+
         return [
-            'wall_assembly' => implode(' | ', array_column($selectedLayers, 'assembly_segment')),
-            'r_value' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + ($layer['conductivity'] > 0 ? $layer['thickness'] / $layer['conductivity'] : 0), 0.0),
+            'wall_assembly' => $wallAssemblyName,
+            'r_value' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + ($layer['conductivity'] > 0 ? (($layer['thickness'] / 1000) / $layer['conductivity']) : 0), 0.0),
             'embodied_carbon' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + $layer['embodied_carbon'], 0.0),
             'thickness' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + $layer['thickness'], 0.0),
             'fire_rating' => null,
+            'layers' => $selectedLayers,
         ];
+    }
+
+    /**
+     * @param  array<int, array{category_name: string, assembly_segment: string}>  $selectedLayers
+     */
+    private function buildWallAssemblyName(array $selectedLayers): string
+    {
+        $labelByCategory = [
+            'exterior' => 'Exterior',
+            'intermediate' => 'Structure',
+            'structure' => 'Structure',
+            'insulation' => 'Insulation',
+        ];
+
+        $segmentByLabel = collect($selectedLayers)
+            ->map(function (array $layer) use ($labelByCategory): ?array {
+                $category = mb_strtolower(trim($layer['category_name']));
+                $label = $labelByCategory[$category] ?? null;
+
+                if ($label === null) {
+                    return null;
+                }
+
+                $parts = explode(':', (string) $layer['assembly_segment'], 2);
+                $materialName = isset($parts[1]) ? trim($parts[1]) : trim($parts[0]);
+
+                if ($materialName === '') {
+                    return null;
+                }
+
+                return [
+                    'label' => $label,
+                    'segment' => $label.': '.$materialName,
+                ];
+            })
+            ->filter()
+            ->unique('label')
+            ->mapWithKeys(fn (array $entry): array => [$entry['label'] => $entry['segment']]);
+
+        $orderedSegments = collect(['Exterior', 'Structure', 'Insulation'])
+            ->map(fn (string $label): ?string => $segmentByLabel->get($label))
+            ->filter()
+            ->values();
+
+        return $orderedSegments->isNotEmpty()
+            ? $orderedSegments->implode(' | ')
+            : 'Calculated Wall';
+    }
+
+    private function persistWallAssembly(array $wallAssembly): void
+    {
+        DB::transaction(function () use ($wallAssembly): void {
+            if ($this->matchingWallExists($wallAssembly)) {
+                return;
+            }
+
+            $wallId = (int) DB::table('walls')->insertGetId([
+                'Assembly_Description' => (string) $wallAssembly['wall_assembly'],
+                'Climate_Zone' => 'Calculated',
+                'Wall_Type' => 'Calculated Wall',
+                'R_Value_U_Value' => (float) $wallAssembly['r_value'],
+                'Embodied_Carbon' => (float) $wallAssembly['embodied_carbon'],
+                'Fire_Resistance_Rating' => 0,
+                'Wall_Thickness(m/in)' => (float) $wallAssembly['thickness'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $layerRows = collect($wallAssembly['layers'] ?? [])
+                ->values()
+                ->map(function (array $layer, int $index) use ($wallId): array {
+                    return [
+                        'wall_id' => $wallId,
+                        'material_id' => (int) $layer['material_id'],
+                        'layer_number' => $index + 1,
+                        'layer_thickness' => (float) $layer['thickness'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                })
+                ->all();
+
+            if ($layerRows !== []) {
+                DB::table('layers')->insert($layerRows);
+            }
+        });
+    }
+
+    /**
+     * @param  array{wall_assembly: string, layers: array<int, array{material_id:int, thickness: float|int}>}  $wallAssembly
+     */
+    private function matchingWallExists(array $wallAssembly): bool
+    {
+        $candidateWallIds = DB::table('walls')
+            ->where('Assembly_Description', (string) $wallAssembly['wall_assembly'])
+            ->pluck('id');
+
+        if ($candidateWallIds->isEmpty()) {
+            return false;
+        }
+
+        $expectedLayers = collect($wallAssembly['layers'])
+            ->values()
+            ->map(function (array $layer, int $index): array {
+                return [
+                    'layer_number' => $index + 1,
+                    'material_id' => (int) ($layer['material_id'] ?? 0),
+                    'thickness' => (float) ($layer['thickness'] ?? 0),
+                ];
+            })
+            ->all();
+
+        foreach ($candidateWallIds as $wallId) {
+            $existingLayers = DB::table('layers')
+                ->where('wall_id', $wallId)
+                ->orderBy('layer_number')
+                ->get(['layer_number', 'material_id', 'layer_thickness'])
+                ->map(fn (object $layer): array => [
+                    'layer_number' => (int) $layer->layer_number,
+                    'material_id' => (int) $layer->material_id,
+                    'thickness' => (float) $layer->layer_thickness,
+                ])
+                ->all();
+
+            if ($this->layersMatch($expectedLayers, $existingLayers)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int, array{layer_number:int, material_id:int, thickness:float}>  $expectedLayers
+     * @param  array<int, array{layer_number:int, material_id:int, thickness:float}>  $existingLayers
+     */
+    private function layersMatch(array $expectedLayers, array $existingLayers): bool
+    {
+        if (count($expectedLayers) !== count($existingLayers)) {
+            return false;
+        }
+
+        foreach ($expectedLayers as $index => $expectedLayer) {
+            $existingLayer = $existingLayers[$index] ?? null;
+
+            if ($existingLayer === null) {
+                return false;
+            }
+
+            if ($expectedLayer['layer_number'] !== $existingLayer['layer_number']) {
+                return false;
+            }
+
+            if ($expectedLayer['material_id'] !== $existingLayer['material_id']) {
+                return false;
+            }
+
+            if (abs($expectedLayer['thickness'] - $existingLayer['thickness']) > 0.0001) {
+                return false;
+            }
+        }
+
+        return true;
     }
 };
 ?>
 
 <div class="space-y-8">
-<section class="mt-8 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
-    <div class="border-b border-zinc-200/70 px-6 py-5 dark:border-zinc-800 md:px-8">
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-300">Material Table</p>
+<section class="mt-8 overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm">
+    <div class="border-b border-zinc-200/70 px-6 py-5 md:px-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-700">Material Table</p>
         <div class="mt-2 flex items-center justify-between gap-4">
-            <h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Wall Layer Breakdown</h2>
+            <h2 class="text-xl font-semibold text-zinc-900">Wall Layer Breakdown</h2>
             <button
                 type="button"
                 wire:click="addRow"
                 @disabled(count($rows) >= $maxRows)
-                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white text-xl leading-none text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white text-xl leading-none text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Add row"
             >
                 +
@@ -206,20 +388,24 @@ new class extends Component
 
     <div class="overflow-x-auto">
         <table class="min-w-full text-left text-sm">
-            <thead class="bg-zinc-100/80 text-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200">
+            <thead class="bg-zinc-100/80 text-zinc-700">
                 <tr>
+                    <th class="w-14 px-2 py-3 text-center font-semibold md:px-3">N.O</th>
                     <th class="px-6 py-3 font-semibold md:px-8">Material location</th>
                     <th class="px-6 py-3 font-semibold md:px-8">Materials</th>
                     <th class="px-6 py-3 font-semibold md:px-8">Thickness</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-200/70 dark:divide-zinc-800">
+            <tbody class="divide-y divide-zinc-200/70">
                 @foreach ($rows as $index => $row)
                     <tr wire:key="material-row-{{ $row['id'] }}">
+                        <td class="w-14 px-2 py-3 text-center md:px-3">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold text-zinc-700">{{ $index + 1 }}</span>
+                        </td>
                         <td class="px-6 py-3 md:px-8">
                             <select
                                 wire:model.live="rows.{{ $index }}.category"
-                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
                             >
                                 <option value="">Select category</option>
                                 @foreach ($categoryNames as $categoryName)
@@ -230,7 +416,7 @@ new class extends Component
                         <td class="px-6 py-3 md:px-8">
                             <select
                                 wire:model.live="rows.{{ $index }}.material"
-                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:disabled:bg-zinc-800"
+                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100"
                                 @disabled(($row['category'] ?? '') === '')
                             >
                                 <option value="">Select material</option>
@@ -248,13 +434,13 @@ new class extends Component
                                     min="0"
                                     step="any"
                                     inputmode="decimal"
-                                    class="w-44 shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                                    class="w-44 shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                                 >
                                 <button
                                     type="button"
                                     wire:click="removeRow({{ $index }})"
                                     @disabled(count($rows) <= $minRows)
-                                    class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                                    class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-300 bg-white text-base leading-none text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Remove this layer"
                                 >
                                     -
@@ -267,7 +453,7 @@ new class extends Component
         </table>
     </div>
 
-    <div class="border-t border-zinc-200/70 px-6 py-5 dark:border-zinc-800 md:px-8">
+    <div class="border-t border-zinc-200/70 px-6 py-5 md:px-8">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
                 type="button"
@@ -277,34 +463,47 @@ new class extends Component
             >
                 create wall
             </button>
+
+            @can('access-admin')
+                @if ($createdWallAssemblies !== [])
+                    <button
+                        type="button"
+                        wire:click="addWalls"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500/30 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                        add walls
+                    </button>
+                @endif
+            @endcan
         </div>
     </div>
 </section>
 
-<section class="overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+<section class="overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/90 shadow-sm">
     <div class="overflow-x-auto">
         <table class="min-w-full text-left text-sm">
-            <thead class="bg-zinc-100/80 text-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200">
+            <thead class="bg-zinc-100/80 text-zinc-700">
                 <tr>
                     <th class="px-6 py-3 font-semibold md:px-8">Wall Assembly</th>
-                    <th class="px-6 py-3 font-semibold md:px-8">R Value</th>
-                    <th class="px-6 py-3 font-semibold md:px-8">Embodied Carbon</th>
                     <th class="px-6 py-3 font-semibold md:px-8">Thickness</th>
+                    <th class="px-6 py-3 font-semibold md:px-8">Embodied Carbon</th>
+                    <th class="px-6 py-3 font-semibold md:px-8">R Value</th>
                     <th class="px-6 py-3 font-semibold md:px-8">Fire Rating</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-200/70 dark:divide-zinc-800">
+            <tbody class="divide-y divide-zinc-200/70">
                 @forelse ($createdWallAssemblies as $wallAssembly)
                     <tr>
-                        <td class="px-6 py-3 text-zinc-800 dark:text-zinc-100 md:px-8">{{ preg_replace('/\bIntermediate\b/i', 'Structure', (string) $wallAssembly['wall_assembly']) }}</td>
-                        <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ number_format((float) $wallAssembly['r_value'], 2) }}</td>
-                        <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ number_format((float) $wallAssembly['embodied_carbon'], 2) }}</td>
-                        <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ number_format((float) $wallAssembly['thickness'], 2) }}</td>
-                        <td class="px-6 py-3 text-zinc-700 dark:text-zinc-200 md:px-8">{{ $wallAssembly['fire_rating'] ?? 'N/A' }}</td>
+                        <td class="px-6 py-3 text-zinc-800 md:px-8">{{ preg_replace('/\bIntermediate\b/i', 'Structure', (string) $wallAssembly['wall_assembly']) }}</td>
+                        <td class="px-6 py-3 text-zinc-700 md:px-8">{{ number_format((float) $wallAssembly['thickness'], 2) }}</td>
+                        <td class="px-6 py-3 text-zinc-700 md:px-8">{{ number_format((float) $wallAssembly['embodied_carbon'], 2) }}</td>
+                        <td class="px-6 py-3 text-zinc-700 md:px-8">{{ number_format((float) $wallAssembly['r_value'], 3, '.', '') }}</td>
+                        <td class="px-6 py-3 text-zinc-700 md:px-8">{{ $wallAssembly['fire_rating'] ?? 'N/A' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 md:px-8">
+                        <td colspan="5" class="px-6 py-4 text-sm text-zinc-500 md:px-8">
                             No walls created yet.
                         </td>
                     </tr>

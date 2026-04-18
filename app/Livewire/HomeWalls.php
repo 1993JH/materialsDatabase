@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -119,6 +120,22 @@ class HomeWalls extends Component
     {
         $this->activeWallId = null;
         $this->activeWallName = '';
+    }
+
+    public function deleteWall(int $wallId): void
+    {
+        abort_unless(Gate::allows('access-admin'), 403);
+
+        DB::transaction(function () use ($wallId): void {
+            DB::table('layers')->where('wall_id', $wallId)->delete();
+            DB::table('walls')->where('id', $wallId)->delete();
+        });
+
+        if ($this->activeWallId === $wallId) {
+            $this->closeWallLayers();
+        }
+
+        $this->resetPage();
     }
 
     #[Computed]

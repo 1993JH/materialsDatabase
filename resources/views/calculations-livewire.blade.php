@@ -19,7 +19,7 @@
 
         @livewireStyles
     </head>
-    <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased">
         <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,#0f766e20,transparent_35%),radial-gradient(circle_at_85%_20%,#f59e0b22,transparent_30%),radial-gradient(circle_at_50%_100%,#38bdf822,transparent_35%)]"></div>
 
         <x-site-navbar />
@@ -31,3 +31,4 @@
         @livewireScripts
     </body>
 </html>
+
