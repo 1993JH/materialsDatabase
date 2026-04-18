@@ -13,6 +13,8 @@ class HomeWalls extends Component
 {
     use WithPagination;
 
+    private const float AIR_GAP_R_VALUE = 0.16;
+
     public string $search = '';
 
     /**
@@ -293,9 +295,12 @@ class HomeWalls extends Component
             ->map(function (object $row): array {
                 $thicknessInMeters = ((float) $row->layer_thickness) / 1000;
                 $conductivity = (float) $row->conductivity;
+                $materialName = mb_strtolower(trim((string) $row->material_name));
                 $rValue = null;
 
-                if ($conductivity > 0) {
+                if (str_contains($materialName, 'air gap')) {
+                    $rValue = self::AIR_GAP_R_VALUE;
+                } elseif ($conductivity > 0) {
                     $rValue = floor(($thicknessInMeters / $conductivity) * 10000) / 10000;
                 }
 

@@ -77,6 +77,16 @@ test('home walls component loads layers on demand and supports filtering', funct
             'created_at' => now(),
             'updated_at' => now(),
         ],
+        [
+            'id' => 2,
+            'name' => 'Air gap 20mm',
+            'category_id' => 1,
+            'Conductivity(W/mK)' => 0.026,
+            'KgCO2e' => 0,
+            'Stud_Spacing' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
     ]);
 
     DB::table('walls')->insert([
@@ -115,6 +125,14 @@ test('home walls component loads layers on demand and supports filtering', funct
             'created_at' => now(),
             'updated_at' => now(),
         ],
+        [
+            'wall_id' => 1,
+            'material_id' => 2,
+            'layer_number' => 2,
+            'layer_thickness' => 20,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
     ]);
 
     Livewire::test(HomeWalls::class)
@@ -135,5 +153,7 @@ test('home walls component loads layers on demand and supports filtering', funct
         ->call('openWallLayers', 1)
         ->assertSet('activeWallId', 1)
         ->assertSee('Test Insulation')
-        ->assertSee('0.6350');
+        ->assertSee('0.6350')
+        ->assertSee('Air gap 20mm')
+        ->assertSee('0.1600');
 });
