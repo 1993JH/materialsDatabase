@@ -17,9 +17,23 @@ new class extends Component
 
     public array $createdWallAssemblies = [];
 
+    public array $protectiveMembranes = [];
+
+    public array $frames = [];
+
+    public string $selectedProtectiveMembrane = '';
+
+    public string $selectedFrame = '';
+
+    public string $wallType = 'loadbearing';
+
     public int $minRows = 3;
 
     public int $maxRows = 10;
+
+    public bool $showAddWallsConfirmation = false;
+
+    public string $wallAddedMessage = '';
 
     public function mount(): void
     {
@@ -52,6 +66,18 @@ new class extends Component
             ->mapWithKeys(fn ($category) => [
                 $category->name => $materialsByCategory->get($category->id, []),
             ])
+            ->all();
+
+        $this->protectiveMembranes = DB::table('fire_rating_wall_types')
+            ->orderBy('wall_type')
+            ->pluck('wall_type')
+            ->values()
+            ->all();
+
+        $this->frames = DB::table('fire_rating_frames')
+            ->orderBy('frame')
+            ->pluck('frame')
+            ->values()
             ->all();
 
         $this->rows = [
@@ -92,20 +118,70 @@ new class extends Component
         $this->createdWallAssemblies[] = $createdWallAssembly;
     }
 
+    public function requestAddWalls(): void
+    {
+        if (! Gate::allows('access-admin')) {
+            return;
+        }
+
+        $this->resetErrorBag('duplicateWall');
+        $this->wallAddedMessage = '';
+        $this->showAddWallsConfirmation = true;
+    }
+
+    public function cancelAddWalls(): void
+    {
+        $this->showAddWallsConfirmation = false;
+    }
+
     public function addWalls(): void
     {
         if (! Gate::allows('access-admin')) {
             return;
         }
 
+        $this->resetErrorBag('duplicateWall');
+        $this->showAddWallsConfirmation = false;
+
+        $addedWallCount = 0;
+
         foreach ($this->createdWallAssemblies as $createdWallAssembly) {
-            $this->persistWallAssembly($createdWallAssembly);
+            if ($this->persistWallAssembly($createdWallAssembly)) {
+                $addedWallCount++;
+            }
+        }
+
+        if ($addedWallCount > 0) {
+            $this->wallAddedMessage = 'Wall added.';
         }
     }
 
     public function materialOptionsForCategory(string $categoryName): array
     {
         return $this->categoryMaterialMap[$categoryName] ?? [];
+    }
+
+    public function getCalculatedFireRating(): int
+    {
+        $minuteColumn = $this->wallType === 'loadbearing' ? 'loadbearing_minutes' : 'non_loadbearing_minutes';
+        $membraneRating = 0;
+        $frameRating = 0;
+
+        if ($this->selectedProtectiveMembrane !== '') {
+            $membraneRating = (int) DB::table('fire_rating_wall_types')
+                ->where('wall_type', $this->selectedProtectiveMembrane)
+                ->value($minuteColumn);
+        }
+
+        if ($this->selectedFrame === '') {
+            return $membraneRating;
+        }
+
+        $frameRating = (int) DB::table('fire_rating_frames')
+            ->where('frame', $this->selectedFrame)
+            ->value($minuteColumn);
+
+        return $membraneRating + $frameRating;
     }
 
     private function blankRow(): array
@@ -198,7 +274,7 @@ new class extends Component
             'r_value' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + ($layer['conductivity'] > 0 ? (($layer['thickness'] / 1000) / $layer['conductivity']) : 0), 0.0),
             'embodied_carbon' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + $layer['embodied_carbon'], 0.0),
             'thickness' => array_reduce($selectedLayers, fn (float $total, array $layer): float => $total + $layer['thickness'], 0.0),
-            'fire_rating' => null,
+            'fire_rating' => $this->getCalculatedFireRating(),
             'layers' => $selectedLayers,
         ];
     }
@@ -250,17 +326,31 @@ new class extends Component
             : 'Calculated Wall';
     }
 
-    private function persistWallAssembly(array $wallAssembly): void
+    private function persistWallAssembly(array $wallAssembly): bool
     {
         DB::transaction(function () use ($wallAssembly): void {
             if ($this->matchingWallExists($wallAssembly)) {
+                $this->addError('duplicateWall', 'This wall already exists in the database.');
+
                 return;
             }
+
+            $wallTypeParts = [];
+
+            if ($this->selectedProtectiveMembrane !== '') {
+                $wallTypeParts[] = $this->selectedProtectiveMembrane;
+            }
+
+            if ($this->selectedFrame !== '') {
+                $wallTypeParts[] = $this->selectedFrame;
+            }
+
+            $wallType = implode(' and ', $wallTypeParts) ?: 'Calculated Wall';
 
             $wallId = (int) DB::table('walls')->insertGetId([
                 'Assembly_Description' => (string) $wallAssembly['wall_assembly'],
                 'Climate_Zone' => 'Calculated',
-                'Wall_Type' => 'Calculated Wall',
+                'Wall_Type' => $wallType,
                 'R_Value_U_Value' => (float) $wallAssembly['r_value'],
                 'Embodied_Carbon' => (float) $wallAssembly['embodied_carbon'],
                 'Fire_Resistance_Rating' => 0,
@@ -287,6 +377,8 @@ new class extends Component
                 DB::table('layers')->insert($layerRows);
             }
         });
+
+        return ! $this->getErrorBag()->has('duplicateWall');
     }
 
     /**
@@ -454,6 +546,63 @@ new class extends Component
     </div>
 
     <div class="border-t border-zinc-200/70 px-6 py-5 md:px-8">
+        <div class="space-y-4">
+            <div>
+                <p class="text-sm font-medium text-zinc-700">Wall Type Classification</p>
+                <div class="mt-3 flex items-center gap-6">
+                    <label class="flex cursor-pointer items-center gap-2">
+                        <input
+                            type="radio"
+                            wire:model="wallType"
+                            value="loadbearing"
+                            class="h-4 w-4 border-zinc-300 text-cyan-600 transition focus:ring-2 focus:ring-cyan-500/30"
+                        >
+                        <span class="text-sm text-zinc-700">Loadbearing</span>
+                    </label>
+                    <label class="flex cursor-pointer items-center gap-2">
+                        <input
+                            type="radio"
+                            wire:model="wallType"
+                            value="non-loadbearing"
+                            class="h-4 w-4 border-zinc-300 text-cyan-600 transition focus:ring-2 focus:ring-cyan-500/30"
+                        >
+                        <span class="text-sm text-zinc-700">Non-Loadbearing</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="border-t border-zinc-200/70 pt-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700">Protective Membranes</label>
+                        <select
+                            wire:model="selectedProtectiveMembrane"
+                            class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
+                        >
+                            <option value="">Select protective membrane</option>
+                            @foreach ($protectiveMembranes as $membrane)
+                                <option value="{{ $membrane }}">{{ $membrane }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-700">Frame</label>
+                        <select
+                            wire:model="selectedFrame"
+                            class="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
+                        >
+                            <option value="">Select frame</option>
+                            @foreach ($frames as $frame)
+                                <option value="{{ $frame }}">{{ $frame }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="border-t border-zinc-200/70 px-6 py-5 md:px-8">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
                 type="button"
@@ -468,7 +617,7 @@ new class extends Component
                 @if ($createdWallAssemblies !== [])
                     <button
                         type="button"
-                        wire:click="addWalls"
+                        wire:click="requestAddWalls"
                         wire:loading.attr="disabled"
                         class="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500/30 disabled:cursor-not-allowed disabled:opacity-70"
                     >
@@ -477,6 +626,36 @@ new class extends Component
                 @endif
             @endcan
         </div>
+
+        @if ($showAddWallsConfirmation)
+            <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-amber-900">
+                <p class="text-sm font-semibold">Are you sure you want to add this wall?</p>
+                <div class="mt-3 flex flex-wrap gap-3">
+                    <button
+                        type="button"
+                        wire:click="addWalls"
+                        class="inline-flex items-center justify-center rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-500"
+                    >
+                        confirm add
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="cancelAddWalls"
+                        class="inline-flex items-center justify-center rounded-full border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+                    >
+                        cancel
+                    </button>
+                </div>
+            </div>
+        @endif
+
+        @if ($wallAddedMessage !== '')
+            <p class="mt-4 text-sm font-semibold text-emerald-600">{{ $wallAddedMessage }}</p>
+        @endif
+
+            @error('duplicateWall')
+                <p class="mt-3 text-sm font-medium text-red-600">{{ $message }}</p>
+            @enderror
     </div>
 </section>
 
@@ -499,7 +678,7 @@ new class extends Component
                         <td class="px-6 py-3 text-zinc-700 md:px-8">{{ number_format((float) $wallAssembly['thickness'], 2) }}</td>
                         <td class="px-6 py-3 text-zinc-700 md:px-8">{{ number_format((float) $wallAssembly['embodied_carbon'], 2) }}</td>
                         <td class="px-6 py-3 text-zinc-700 md:px-8">{{ number_format((float) $wallAssembly['r_value'], 3, '.', '') }}</td>
-                        <td class="px-6 py-3 text-zinc-700 md:px-8">{{ $wallAssembly['fire_rating'] ?? 'N/A' }}</td>
+                        <td class="px-6 py-3 text-zinc-700 md:px-8">{{ $wallAssembly['fire_rating'] > 0 ? $wallAssembly['fire_rating'].' minutes' : '0' }}</td>
                     </tr>
                 @empty
                     <tr>

@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             ImportMaterialsSeeder::class,
             ImportWallsSeeder::class,
             ImportLayersSeeder::class,
+            ImportFireRatingWallTypesSeeder::class,
+            ImportFireRatingFramesSeeder::class,
         ]);
     }
 }
